@@ -1,0 +1,70 @@
+from subprocess import check_output
+def py_bowtie_single_end(list_fastq=[], list_output_sam=None, bowtie2_index=None):
+    """written by peteskene@gmail.com
+    
+    takes a list fastq files as strings e.g. ['A.fastq', 'B.fastq']
+    can also be a nested list if there are multiple fastq files per dataset [['A_1.fastq', 'A_2.fastq'], ['B_1.fastq', 'B_2.fastq']]
+    can be a mixture of list and nested lists
+    can include paths
+    
+    if list_output_sam is left as None, auto-generates names for the output files e.g. ['A.sam', 'B.sam'],
+    otherwise can manually enter a list of output names as strings
+    for nested lists, need to manually provide a list of output names
+    
+    call to bowtie2 for single fastq:
+    bowtie2 --local --very-sensitive-local --no-unal -q --phred33 --threads 12 -x index -U A.fastq > A.sam
+    
+    call to bowtie2 for multiple fastq per dataset:
+    bowtie2 --local --very-sensitive-local --no-unal -q --phred33 --threads 12 -x index -U A_1.fastq,A_2.fastq > A.sam
+    
+    ____________________
+    Requirements:
+    
+    module load bowtie2/2.2.5 (needs to be typed into terminal before invoking jupyter instance)
+    
+    """ 
+    
+    print 'files imported (multiple files for a dateset reported as a list): '
+    for item in list_fastq:
+        print item
+    print
+    
+    if list_output_sam==None:
+        for item in list_fastq:
+            if type(item)!=str:
+                return 'Exiting... list_fastq needs to be a list of strings; if a nested list, need to manually provide list_output_sam'
+            
+        list_output_sam = [f.replace('.fastq', '.sam') for f in list_fastq]              
+   
+        
+    if list_output_sam!=None:
+        if len(list_fastq)!=len(list_output_sam):
+            return 'Exiting... list_fastq and list_output_sam have different numbers of filenames'
+        
+    print 'output sam filenames: '
+    print '\n'.join(list_output_sam)
+    print
+    if bowtie2_index==None:
+        return 'Exiting... need to provide bowtie2 index as a string'
+    print 'bowtie2 index:'
+    print bowtie2_index
+    print
+    
+    for i in range(len(list_fastq)):
+        temp_str ='abc'
+        
+        if type(list_fastq[i])==str: #single fastq for a dataset
+            temp_str = 'bowtie2 --local --very-sensitive-local --no-unal -q --phred33 --threads 12' \
+            + ' -x ' + bowtie2_index + ' -U ' + list_fastq[i]  + ' > ' + list_output_sam[i]
+            
+        if type(list_fastq[i])==list: #multiple fastq for a dataset
+            temp_str = 'bowtie2 --local --very-sensitive-local --no-unal -q --phred33 --threads 12' \
+            + ' -x ' + bowtie2_index + ' -U ' + ','.join(list_fastq[i])  + ' > ' + list_output_sam[i]
+    
+        
+        print 'call to bowtie2: '
+        print temp_str
+        print
+        check_output(temp_str, shell=True)
+
+    return 'Done'
